@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sunnyweather.android.R
 import com.sunnyweather.android.databinding.FragmentPlaceBinding
-import java.text.Bidi
 
 class PlaceFragment : Fragment() {
 
@@ -26,22 +25,26 @@ class PlaceFragment : Fragment() {
 
     private lateinit var binding: FragmentPlaceBinding
 
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var searchPlaceEdit: TextView
+    private lateinit var bgImageView: ImageView
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentPlaceBinding.inflate(inflater, container, false)
-//        return inflater.inflate(R.layout.fragment_place, container, false)
-        return binding.root
+    ): View? {
+        binding = FragmentPlaceBinding.inflate(inflater)
+        return inflater.inflate(R.layout.fragment_place, container, false)
+//        return binding.root
     }
 
     @Deprecated("Deprecated in Java")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val recyclerView = binding.recyclerView
-        val searchPlaceEdit = binding.searchPlaceEdit
-        val bgImageView = binding.bgImageView
+        recyclerView = view.findViewById(R.id.recyclerView)
+        searchPlaceEdit = view.findViewById(R.id.searchPlaceEdit)
+        bgImageView = view.findViewById(R.id.bgImageView)
         val layoutManager = LinearLayoutManager(activity)
         recyclerView.layoutManager = layoutManager
         adapter = PlaceAdapter(this, viewModel.placeList)
