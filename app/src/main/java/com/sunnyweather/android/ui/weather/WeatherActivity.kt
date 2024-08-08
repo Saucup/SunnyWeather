@@ -1,6 +1,7 @@
 package com.sunnyweather.android.ui.weather
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,8 +9,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import com.sunnyweather.android.R
 import com.sunnyweather.android.databinding.ActivityWeatherBinding
@@ -22,9 +26,9 @@ import java.util.Locale
 
 class WeatherActivity() : AppCompatActivity() {
 
-    private val viewModel: WeatherViewModel by viewModels()
+    val viewModel: WeatherViewModel by viewModels()
 
-    private val binding by lazy { ActivityWeatherBinding.inflate(layoutInflater) }
+    val binding by lazy { ActivityWeatherBinding.inflate(layoutInflater) }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +66,22 @@ class WeatherActivity() : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener {
             refreshWeather()
         }
+
+        binding.includedNow.navBtn.setOnClickListener {
+            binding.drawerLayout.openDrawer(GravityCompat.START)
+        }
+
+        binding.drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerStateChanged(newState: Int) {}
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+            override fun onDrawerOpened(drawerView: View) {}
+            override fun onDrawerClosed(drawerView: View) {
+                val manager = getSystemService(Context.INPUT_METHOD_SERVICE)
+                        as InputMethodManager
+                manager.hideSoftInputFromWindow(drawerView.windowToken,
+                    InputMethodManager.HIDE_NOT_ALWAYS)
+            }
+        })
 
     }
 
