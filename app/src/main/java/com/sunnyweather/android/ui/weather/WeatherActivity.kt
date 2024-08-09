@@ -5,6 +5,7 @@ import android.app.ProgressDialog.show
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.widget.ImageView
 import android.widget.TextView
@@ -23,7 +24,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.sunnyweather.android.R
 import com.sunnyweather.android.databinding.ActivityWeatherBinding
 import com.sunnyweather.android.databinding.ForecastBinding
@@ -34,14 +37,19 @@ import com.sunnyweather.android.logic.model.getSky
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.stream.Collector
 
 class WeatherActivity() : AppCompatActivity() {
+
+    private val TAG="activity tag Weather"
 
     val viewModel: WeatherViewModel by viewModels()
 
     val binding by lazy { ActivityWeatherBinding.inflate(layoutInflater) }
 
     val forecastAdapter by lazy{ForecastAdapter(this, DailyResponse.emptyDaily())}
+
+    val lifeIndexAdapter by lazy{LifeIndexAdapter(this, emptyList())}
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,6 +85,10 @@ class WeatherActivity() : AppCompatActivity() {
         binding.includedForecast.forecastLayout.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         binding.includedForecast.forecastLayout.adapter = forecastAdapter
+
+        binding.includedLifeIndex.lifeIndexItem.layoutManager=
+            GridLayoutManager(this, 2, GridLayoutManager.VERTICAL, false)
+        binding.includedLifeIndex.lifeIndexItem.adapter = lifeIndexAdapter
 
         binding.includedNow.navBtn.setOnClickListener {
             binding.drawerLayout.openDrawer(GravityCompat.START)
@@ -135,12 +147,13 @@ class WeatherActivity() : AppCompatActivity() {
         forecastAdapter.notifyDataSetChanged()
 
 // 填充life_index.xml布局中的数据
-        val lifeIndex = daily.lifeIndex
+        lifeIndexAdapter.lifeDescriptions = weather.daily.lifeIndex.toList().map { (k, v) ->
+            Pair(k, v.first())
+        }
+        Log.d(TAG, "showWeatherInfo: ${lifeIndexAdapter.lifeDescriptions}")
+        lifeIndexAdapter.notifyDataSetChanged()
 
-        binding.includedLifeIndex.coldRiskText.text = lifeIndex.coldRisk[0].desc
-        binding.includedLifeIndex.dressingText.text = lifeIndex.dressing[0].desc
-        binding.includedLifeIndex.ultravioletText.text = lifeIndex.ultraviolet[0].desc
-        binding.includedLifeIndex.carWashingText.text = lifeIndex.carWashing[0].desc
+        val lifeIndex = daily.lifeIndex
 
         binding.weatherLayout.visibility = View.VISIBLE
     }
