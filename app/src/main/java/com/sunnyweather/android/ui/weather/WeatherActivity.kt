@@ -1,6 +1,7 @@
 package com.sunnyweather.android.ui.weather
 
 import android.annotation.SuppressLint
+import android.app.ProgressDialog.show
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -13,15 +14,21 @@ import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.sunnyweather.android.R
 import com.sunnyweather.android.databinding.ActivityWeatherBinding
 import com.sunnyweather.android.databinding.ForecastBinding
 import com.sunnyweather.android.databinding.ForecastItemBinding
+import com.sunnyweather.android.logic.model.DailyResponse
 import com.sunnyweather.android.logic.model.Weather
 import com.sunnyweather.android.logic.model.getSky
 import kotlinx.coroutines.launch
@@ -34,12 +41,20 @@ class WeatherActivity() : AppCompatActivity() {
 
     val binding by lazy { ActivityWeatherBinding.inflate(layoutInflater) }
 
+    val forecastAdapter by lazy{ForecastAdapter(this, DailyResponse.emptyDaily())}
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val decorView = window.decorView
-        decorView.systemUiVisibility =
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+
+            isAppearanceLightStatusBars = true
+            hide(WindowInsetsCompat.Type.statusBars())
+            hide(WindowInsetsCompat.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
         window.statusBarColor = Color.TRANSPARENT
         setContentView(binding.root)
 
@@ -58,6 +73,10 @@ class WeatherActivity() : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener {
             refreshWeather()
         }
+
+        binding.includedForecast.forecastLayout.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        binding.includedForecast.forecastLayout.adapter = forecastAdapter
 
         binding.includedNow.navBtn.setOnClickListener {
             binding.drawerLayout.openDrawer(GravityCompat.START)
@@ -111,32 +130,18 @@ class WeatherActivity() : AppCompatActivity() {
         binding.includedNow.currentAQI.text = currentPM25Text
         binding.includedNow.nowLayout.setBackgroundResource(getSky(realtime.skycon).bg)
 
-// 填充forecast.xml布局中的数据
-        binding.includedForecast.forecastLayout.removeAllViews()
-        val days = daily.skycon.size
-        for (i in 0 until days) {
-            val skycon = daily.skycon[i]
-            val temperature = daily.temperature[i]
-            val viewBinding = ForecastItemBinding.inflate(
-                LayoutInflater.from(this),
-                binding.includedForecast.root, false
-            )
-            val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            viewBinding.dateInfo.text = simpleDateFormat.format(skycon.date)
-            val sky = getSky(skycon.value)
-            viewBinding.skyIcon.setImageResource(sky.icon)
-            viewBinding.skyInfo.text = sky.info
-            val tempText = "${temperature.min.toInt()} ~ ${temperature.max.toInt()} ℃"
-            viewBinding.temperatureInfo.text = tempText
-            binding.includedForecast.forecastLayout.addView(viewBinding.root)
-        }
+//填充forecast.xml布局中的数据
+        forecastAdapter.daily = weather.daily
+        forecastAdapter.notifyDataSetChanged()
 
 // 填充life_index.xml布局中的数据
         val lifeIndex = daily.lifeIndex
+
         binding.includedLifeIndex.coldRiskText.text = lifeIndex.coldRisk[0].desc
         binding.includedLifeIndex.dressingText.text = lifeIndex.dressing[0].desc
         binding.includedLifeIndex.ultravioletText.text = lifeIndex.ultraviolet[0].desc
         binding.includedLifeIndex.carWashingText.text = lifeIndex.carWashing[0].desc
+
         binding.weatherLayout.visibility = View.VISIBLE
     }
 
